@@ -3,7 +3,7 @@
 signature-js is a utility library to aid in resolving overloaded function 
 signatures in javascript. It provides a simple form of pattern matching
 to resolve default arguments for a function and throws an invalid argument
-exception if the arguments passed do not match.
+exception if the arguments given do not match.
 
 ```
 npm install typescript -g
@@ -19,7 +19,7 @@ All arguments (host, port and timeout) are required, but only
 the port argument is mandatory, the host and timeout arguments 
 can be given reasonable default values.
 
-```
+```javascript
 /**
  * creates a connection to the given endpoint.
  * @param {string} the host to connect to.
