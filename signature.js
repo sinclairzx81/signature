@@ -27,11 +27,18 @@ THE SOFTWARE.
 ---------------------------------------------------------------------------*/
 "use strict";
 /**
- * creates a new signature.
- * @returns {Signature<T>}
+ * creates a new method signature.
+ * @returns {SignatureFunction}
  */
-exports.signature = function () {
+function signature() {
+    /**
+     * the mappings for this signature.
+     */
     var mappings = new Array();
+    /**
+     * the into function.
+     */
+    var funcs = new Array();
     /**
      * reflects the given type, returning its simple typename.
      * @param {any} the object to reflect.
@@ -110,14 +117,13 @@ exports.signature = function () {
         }
         return undefined;
     };
-    var self = { map: map, into: into };
     /**
-     * creates a signature mapping for the given type names.
-     * @param {Array<string>} the types to match.
-     * @param {(...args: any[]) => T} optional mapping function.
-     * @returns {Signature<T>}
+     * creates this mapping for signature.
+     * @param {Array<string>} the types accepted by this signature.
+     * @param {(Array<any>) : Array<any>} the mapping function.
+     * @returns {Func}
      */
-    function map(types, fn) {
+    var map = function (types, fn) {
         if (fn === undefined)
             fn = function () {
                 var args = [];
@@ -128,33 +134,47 @@ exports.signature = function () {
             };
         for (var i = 0; i < mappings.length; i++) {
             if (compare_type_array(mappings[i].types, types)) {
-                var left = "[" + types.join(", ") + "]";
-                var right = "[" + mappings[i].types.join(", ") + "]";
-                var message = [left, right].join(' and ');
-                throw Error("ambiguous mapping detected between " + message);
+                throw Error("ambiguous signature mapping detected.");
             }
         }
         mappings.push({ types: types, fn: fn });
         return self;
+    };
+    /**
+     * inserts a implementation for this signature.
+     * @param {(...args): any} the implementation.
+     * @returns {Func}
+     */
+    var into = function (fn) {
+        if (funcs.length === 0)
+            funcs.push(fn);
+        else
+            throw Error("signature can only have a single implementation.");
+        return self;
+    };
+    /**
+     * invokes this signature.
+     * @param {...args: any[]} arguments passed to this function.
+     * @returns {any}
+     */
+    function execute() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        var param = match(args);
+        if (param === undefined)
+            throw Error("invalid argument error.");
+        if (funcs.length === 0)
+            throw Error("this signature has no implementation.");
+        return funcs[0].apply({}, param);
     }
     /**
-     * returns a function that wraps the given function such
-     * that, when called, passes through this signatures
-     * type validation.
-     * @param (...args: any[]) the function to wrap.
-     * @returns {SignatureFunc<U>}
+     * packages up self, returns to caller.
      */
-    function into(fn) {
-        return function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i - 0] = arguments[_i];
-            }
-            var param = match(args);
-            if (param === undefined)
-                throw Error("invalid argument.");
-            return fn.apply({}, param);
-        };
-    }
+    var self = execute;
+    self.map = map;
+    self.into = into;
     return self;
-};
+}
+exports.signature = signature;

@@ -26,60 +26,71 @@ THE SOFTWARE.
 
 ---------------------------------------------------------------------------*/
 
-/**
- * SignatureFunc<TResult>
- * Function returned on a call to a signatures into() method.
- */
-interface SignatureFunc<TResult> {
-    (...args: any[]) : TResult
-}
 
 /**
- * Signature<T>
- * provides overloaded function type validation services.
+ * SignatureFunction:
+ * provides function signature validation services
+ * for javascript function.
  */
-interface Signature<TResult> {
+export interface SignatureFunction {
     /**
-     * creates a default mapping on this signature. mapping
-     * the types inputs into the function.
-     * @param {Array<string>} the types to map.
-     * @returns {Signature<TResult>}
+     * invokes this signature.
+     * @param {...args: any[]} the arguments array.
+     * @returns {any}
      */
-    map      (types: Array<string>) : Signature<TResult> 
+    (...args: any[]) : any
     /**
-     * creates a mapping for this signature, allowing the 
-     * inputs to be mapped with the given mapping function.
-     * @param {Array<string>} the types to map.
+     * creates a default mapping for the given typenames.
+     * @param {Array<string>} an array of types that can be called on this signature.
+     * @returns {SignatureFunction}
+     */
+    map (typenames: Array<string>) : SignatureFunction
+
+    /**
+     * creates a custom mapping for the given typenames. the
+     * mapping function will receive the values given by the caller,
+     * and s responsible for mapping each value into the appropriate
+     * type.
+     * @param {Array<string>} an array of type names that map can be called on this signature.
      * @param {(...args: any[]) => Array<any>} the mapping function.
-     * @returns {Signature<TResult>}
+     * @returns {SignatureFunction}
      */
-    map      (types: Array<string>, fn: (...args: any[]) => Array<any>) : Signature<TResult> 
-
+    map (typenames: Array<string>, fn: (...args: any[]) => Array<any>) : SignatureFunction
+    
     /**
-     * creates a new function that proxies calls into the inner function.
-     * Any calls made on the returned function will be type validated
-     * and mapped prior to being passed into the inner function.
-     * @param {(...args: any[]) => any} the function to wrap.
-     * @returns {SignatureFunc<TResult>}
+     * specifies the implementation of this signature.
+     * @param {(...args: any[]) => any} the signature implementation.
+     * @returns {any}
      */
-    into     (fn: (...args: any[]) => any): SignatureFunc<TResult>
+    into(fn: (...args: any[]) => any) : SignatureFunction
 }
 
 /**
- * creates a new signature.
- * @returns {Signature<T>}
+ * creates a new method signature.
+ * @returns {SignatureFunction}
  */
-export const signature = <TResult>(): Signature<TResult> => {
+export function signature() : SignatureFunction {
+    
+    type TypeId = "undefined" | 
+                  "null" | 
+                  "function" | 
+                  "string" | 
+                  "number" | 
+                  "boolean" | 
+                  "date" | 
+                  "array" | 
+                  "object"
 
-    type TypeId = "undefined" | "null" | "function" | "string" | "number" | "boolean" | "date" | "array" | "object"
+    interface Mapping { types  : Array<string>, fn: (...args: any[]) => Array<any> }
 
-    interface Mapping {
-        types  : Array<string>,
-        fn     : (...args: any[]) => Array<any>
-    }
-
-
+    /**
+     * the mappings for this signature.
+     */
     const mappings = new Array<Mapping>()
+    /**
+     * the into function.
+     */
+    const funcs     = new Array<(...args: any[]) => any>()
 
     /**
      * reflects the given type, returning its simple typename.
@@ -116,6 +127,7 @@ export const signature = <TResult>(): Signature<TResult> => {
             }
         } return false
     }
+
     /**
      * compares the given type arrays for equality.
      * @param {Array<string>} the left type array.
@@ -130,7 +142,6 @@ export const signature = <TResult>(): Signature<TResult> => {
         } return true
     }
 
-    
     /**
      * matches the given arguments against this
      * signatures internal mappings. returned undefined
@@ -147,43 +158,51 @@ export const signature = <TResult>(): Signature<TResult> => {
         } return undefined 
     }
 
-
-    const self     = {map, into}
-    
     /**
-     * creates a signature mapping for the given type names.
-     * @param {Array<string>} the types to match.
-     * @param {(...args: any[]) => T} optional mapping function.
-     * @returns {Signature<T>}
+     * creates this mapping for signature.
+     * @param {Array<string>} the types accepted by this signature.
+     * @param {(Array<any>) : Array<any>} the mapping function.
+     * @returns {Func}
      */
-    function map(types: Array<string>, fn?:(...args: any[]) => Array<any>): Signature <TResult> {
+    const map = (types: Array<string>, fn: (...args: any[]) => Array<any>) : SignatureFunction => {
         if(fn === undefined) fn = (...args: any[]) => args
         for(let i = 0; i < mappings.length; i++) {
             if(compare_type_array(mappings[i].types, types)) {
-                let left    = "[" + types.join(", ") + "]"
-                let right   = "[" + mappings[i].types.join(", ") + "]"
-                let message = [left, right].join(' and ')
-                throw Error("ambiguous mapping detected between " + message)
+                throw Error("ambiguous signature mapping detected.")
             }
         } mappings.push({types: types, fn: fn})
-        return self
+        return self as SignatureFunction
+    }
+    
+    /**
+     * inserts a implementation for this signature.
+     * @param {(...args): any} the implementation.
+     * @returns {Func}
+     */
+    const into = (fn: (...args: any[]) => any) : SignatureFunction => {
+        if(funcs.length === 0) funcs.push(fn)
+        else throw Error("signature can only have a single implementation.")
+        return self as SignatureFunction
     }
 
     /**
-     * returns a function that wraps the given function such 
-     * that, when called, passes through this signatures
-     * type validation.
-     * @param (...args: any[]) the function to wrap.
-     * @returns {SignatureFunc<U>}
+     * invokes this signature.
+     * @param {...args: any[]} arguments passed to this function.
+     * @returns {any}
      */
-    function into (fn: (...args: any[]) => any) : SignatureFunc<TResult> {
-        return (...args: any[]) : TResult => {
-            let param = match(args)
-            if(param === undefined)
-                throw Error("invalid argument.")
-            return fn.apply({}, param)
-        }
-    } 
-    
-    return self
+    function execute(...args: any[]) : any {
+        let param = match(args)
+        if(param === undefined)
+            throw Error("invalid argument error.")
+        if(funcs.length === 0)
+            throw Error("this signature has no implementation.")
+        return funcs[0].apply({}, param)
+    }
+    /**
+     * packages up self, returns to caller.
+     */
+    const self = <any>execute
+    self.map  = map
+    self.into = into
+    return self as SignatureFunction
 }
