@@ -117,7 +117,7 @@ sum.into((a, b) => a + b)
 console.assert( sum(10, 20)       === 30)
 console.assert( sum(10, 20, 30)   === 60)
 console.assert( sum("100", "200") === 300)
-console.assert( sum([1, 1, 1, 1], [2, 2, 2]) === 10)
+console.assert( sum([100, 200, 300]) === 600)
 ```
 note: in this example, the map() function should assume the role of 
 mapping the given arguments into the correct type. The above string
