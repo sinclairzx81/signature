@@ -2,7 +2,7 @@
 
 overloaded function signatures in javascript.
 
-signature-ts is a utility library that provides runtime type validation services
+signature-js is a utility library that provides runtime type validation services
 for javascript functions. Useful for typescript authored modules requiring dynamic
 type checking when consumed from javascript.
 
@@ -38,14 +38,14 @@ system is always awkward.
 In addition, authoring overloaded type signatures in either typescript or javascript can be error
 prone, again forcing the developer to validate the types given on a javascript arguments array.
 
-signature-ts aims to simplify runtime type validation of function arguments and 
+signature-js aims to simplify runtime type validation of function arguments and 
 provide a scheme for overloading functions that doesn't feel too out of place
 in the typescript language.
 
 ## usage
 
-signature-ts works by wrapping a javascript function in a closure which contains
-type mappings for arguments that function can accept. signature-ts madates
+signature-js works by wrapping a javascript function in a closure which contains
+type mappings for arguments that function can accept. signature-js madates
 that the signature specify the expected types the signature should expect, and
 a function body.
 
@@ -67,7 +67,7 @@ method(123) // invalid argument error
 ```
 
 ## types
-signature-ts supports the following javascript types, these
+signature-js supports the following javascript types, these
 types are given to a signature as a string array on map().
 when the signature is invoked, the arguments passed at matched
 against the following table.
@@ -86,7 +86,7 @@ date       | Date()
 array      | []
 object     | {}
 ```
-note: signature-ts treats null and undefined as distinct
+note: signature-js treats null and undefined as distinct
 types in line with future revisions of the typescript 
 compiler. callers need to "opt in" to allow a signature
 to accept either of these. 
@@ -99,7 +99,7 @@ as each mapping does not introduce ambiguity. See section on
 ambiguous signatures for more info.
 
 The following creates a function that can accept a variety 
-of arguments. A key principle with signature-ts is that each 
+of arguments. A key principle with signature-js is that each 
 mapping function should map multiple overloads into a single 
 argument list.
 
@@ -122,7 +122,7 @@ console.assert( sum([100, 200, 300]) === 600)
 note: in this example, the map() function should assume the role of 
 mapping the given arguments into the correct type. The above string
 and array mapping "should" be type checked also. This is not done
-here. Future revisions of signature-ts may runtime array checking.
+here. Future revisions of signature-js may runtime array checking.
 
 ## typescript overloading
 
@@ -147,7 +147,7 @@ const sum = signature()
 
 ```
 ## ambiguous signatures
-signature-ts provides some level of protection by preventing multiple
+signature-js provides some level of protection by preventing multiple
 map() arguments from conflicting. 
 
 ```
@@ -164,7 +164,7 @@ let b = signature()
 
 Converting every function is your library into a signature is not practical.
 
-signature-ts was primarily written to mediate the boundary between
+signature-js was primarily written to mediate the boundary between
 typescript and javascript, ensuring that a javascript consumer of a typescript
 module was passing correct values from their non type checked environment.
 
@@ -192,6 +192,6 @@ Where signature would layer the typescript module behind as follows.
            
 ```
 From a typescript perspective, if authoring a typescript library that is expected
-to be consumed from a javascript client, you can use signature-ts to validate
+to be consumed from a javascript client, you can use signature-js to validate
 any exported (publically accessable) function exposed to javascript. For everything
 else, trust in the typescript compilers static type checking.
